@@ -41,3 +41,4 @@ C:\Users\admin\source\repos\WebApplicationForGrillCity\WebApplicationForGrillCit
 C:\Users\admin\source\repos\WebApplicationForGrillCity\WebApplicationForGrillCity\obj\Debug\net8.0\WebApplicationForGrillCity.pdb
 C:\Users\admin\source\repos\WebApplicationForGrillCity\WebApplicationForGrillCity\obj\Debug\net8.0\WebApplicationForGrillCity.genruntimeconfig.cache
 C:\Users\admin\source\repos\WebApplicationForGrillCity\WebApplicationForGrillCity\obj\Debug\net8.0\ref\WebApplicationForGrillCity.dll
+C:\Users\admin\source\repos\WebApplicationForGrillCity\WebApplicationForGrillCity\obj\Debug\net8.0\WebApplicationForGrillCity.sourcelink.json

@@ -47,13 +47,6 @@ app.MapGet("/products", (GrillcitynnContext db, int? typeId) =>
     return Results.Json(products, new JsonSerializerOptions { ReferenceHandler = ReferenceHandler.IgnoreCycles });
 });
 
-app.MapPost("/orders", async (GrillcitynnContext db, Order order) =>
-{
-    db.Orders.Add(order);
-    await db.SaveChangesAsync();
-    return Results.Ok(order);
-});
-
 // Получение заказов за период
 app.MapGet("/ordersByDate", async (GrillcitynnContext db, DateTime startDate, DateTime endDate) =>
 {
@@ -242,8 +235,10 @@ app.MapGet("/getProductMovements", async (GrillcitynnContext db) =>
     return Results.Json(movements);
 });
 
-
-
+app.MapGet("/providers", (GrillcitynnContext db) =>
+{
+    return Results.Json(db.Providers.ToList());
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

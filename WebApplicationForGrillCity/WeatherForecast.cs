@@ -1,4 +1,4 @@
-namespace WebApplicationForGrillCity
+﻿namespace WebApplicationForGrillCity
 {
     public class WeatherForecast
     {

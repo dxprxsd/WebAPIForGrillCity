@@ -1,9 +1,23 @@
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using WebApplicationForGrillCity.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Добавляем сервисы CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 // Add services to the container.
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -240,6 +254,242 @@ app.MapGet("/providers", (GrillcitynnContext db) =>
     return Results.Json(db.Providers.ToList());
 });
 
+app.MapPost("/login", async (GrillcitynnContext db, string login, string password) =>
+{
+    // Поиск пользователя по логину и паролю
+    var user = await db.Users.FirstOrDefaultAsync(u =>
+        u.Userlogin == login && u.Userpassword == password);
+
+    if (user == null)
+    {
+        return Results.Unauthorized(); // Неверный логин или пароль
+    }
+
+    return Results.Ok(new
+    {
+        Message = "Авторизация успешна.",
+        UserId = user.Userid,
+        FullName = $"{user.Sname} {user.Fname} {user.Patronumic}",
+        PhoneNumber = user.Phonenumber
+    });
+});
+
+app.MapPost("/CreateMobileOrder", (
+    GrillcitynnContext db,
+    [FromBody] CreateOrderDto dto
+) =>
+{
+    // Извлекаем значения из DTO
+    var clientId = dto.ClientId;
+    var products = dto.Products;
+
+    // Проверка существования клиента
+    var client = db.Users.FirstOrDefault(c => c.Userid == clientId);
+    if (client == null)
+    {
+        return Results.BadRequest("Клиент не найден.");
+    }
+
+    // Получаем список продуктов и проверяем их наличие и достаточное количество
+    var productIds = products.Keys.ToList();
+    var dbProducts = db.Products.Where(p => productIds.Contains(p.Id)).ToList();
+
+    if (dbProducts.Count != products.Count)
+    {
+        var missingIds = productIds.Except(dbProducts.Select(p => p.Id));
+        return Results.BadRequest($"Продукты с ID {string.Join(", ", missingIds)} не найдены.");
+    }
+
+    // Проверка наличия достаточного количества на складе
+    foreach (var item in products)
+    {
+        var product = dbProducts.First(p => p.Id == item.Key);
+        if (product.QuantityInStock < item.Value)
+        {
+            return Results.BadRequest($"Недостаточно товара {product.ProductName} на складе.");
+        }
+    }
+
+    // Генерация кода для заказа
+    var random = new Random();
+    string code = random.Next(1000, 9999).ToString();
+
+    // Создание заказа
+    var order = new Myorder
+    {
+        Clientid = clientId,
+        Dateoforder = DateTime.Now,
+        Codefortakeproduct = code,
+        Orderstatus = 1 // Новый заказ
+    };
+
+    db.Myorders.Add(order);
+    db.SaveChanges(); // Сохраняем, чтобы получить OrderId
+
+    double totalPrice = 0;
+    var orderProducts = new List<object>();
+
+    // Создание связи многие-ко-многим и обновление товаров
+    foreach (var item in products)
+    {
+        var product = dbProducts.First(p => p.Id == item.Key);
+
+        // Цена товара без скидки
+        double price = product.Price;
+        double productTotal = price * item.Value;
+        totalPrice += productTotal;
+
+        // Создание записи о товаре в заказе
+        var orderProduct = new Orderproduct
+        {
+            Orderid = order.Orderid,
+            Productsid = product.Id,
+            Countinorder = item.Value
+        };
+
+        db.Orderproducts.Add(orderProduct);
+
+        // Обновление количества товара на складе
+        product.QuantityInStock -= item.Value;
+        db.Products.Update(product);
+
+        orderProducts.Add(new
+        {
+            ProductId = product.Id,
+            ProductName = product.ProductName,
+            Quantity = item.Value,
+            PricePerItem = price,
+            Total = productTotal
+        });
+    }
+
+    // Обновление общего итога заказа (сумма заказа)
+    db.SaveChanges(); // Сохраняем изменения
+
+    // Возвращаем успешный ответ с деталями заказа
+    return Results.Ok(new
+    {
+        OrderId = order.Orderid,
+        CodeForTakeProduct = order.Codefortakeproduct,
+        TotalPrice = totalPrice,
+        Products = orderProducts
+    });
+});
+
+
+app.MapGet("/ordersByUser", async (GrillcitynnContext db, int userId) =>
+{
+    var orders = await db.Myorders
+        .Where(o => o.Clientid == userId)
+        .Include(o => o.OrderstatusNavigation)
+        .Include(o => o.Orderproducts)
+            .ThenInclude(op => op.Products)
+        .Select(o => new
+        {
+            OrderId = o.Orderid,
+            Date = o.Dateoforder.ToString("dd.MM.yyyy"), // ?? безопасно для Kotlin UI
+            Code = o.Codefortakeproduct,
+            Status = o.OrderstatusNavigation.Statusname,
+            Products = o.Orderproducts.Select(op => new
+            {
+                ProductId = op.Productsid,
+                ProductName = op.Products.ProductName,
+                Quantity = op.Countinorder
+            })
+        })
+        .ToListAsync();
+
+    return Results.Ok(orders);
+});
+
+app.MapGet("/statistics", (GrillcitynnContext db) =>
+{
+    var orders = db.Orders
+        .Include(o => o.Product)
+        .ThenInclude(p => p.Provider)
+        .ToList();
+
+    var totalOrders = orders.Count;
+    var totalSales = orders.Sum(o => o.FinalPrice);
+
+    var mostPopularProduct = orders
+        .Where(o => o.Product != null)
+        .GroupBy(o => o.Product!.ProductName)
+        .OrderByDescending(g => g.Count())
+        .Select(g => g.Key)
+        .FirstOrDefault() ?? "—";
+
+    var result = new
+    {
+        TotalOrders = totalOrders,
+        TotalSales = totalSales,
+        MostPopularProduct = mostPopularProduct
+    };
+
+    return Results.Json(result);
+});
+
+app.MapPost("/register", async (GrillcitynnContext db,
+    string login,
+    string password,
+    string sname,
+    string fname,
+    string? patronumic,
+    string phonenumber) =>
+{
+    // Проверка на пустые обязательные поля
+    if (string.IsNullOrWhiteSpace(login) ||
+        string.IsNullOrWhiteSpace(password) ||
+        string.IsNullOrWhiteSpace(sname) ||
+        string.IsNullOrWhiteSpace(fname) ||
+        string.IsNullOrWhiteSpace(phonenumber))
+    {
+        return Results.BadRequest("Все обязательные поля должны быть заполнены.");
+    }
+
+    // Проверка длины пароля
+    if (password.Length < 6)
+    {
+        return Results.BadRequest("Пароль должен содержать минимум 6 символов.");
+    }
+
+    // Проверка уникальности логина
+    var loginExists = await db.Users.AnyAsync(u => u.Userlogin == login);
+    if (loginExists)
+    {
+        return Results.Conflict("Пользователь с таким логином уже существует.");
+    }
+
+    // Проверка уникальности номера телефона
+    var phoneExists = await db.Users.AnyAsync(u => u.Phonenumber == phonenumber);
+    if (phoneExists)
+    {
+        return Results.Conflict("Пользователь с таким номером телефона уже зарегистрирован.");
+    }
+
+    // Создание нового пользователя
+    var newUser = new User
+    {
+        Userlogin = login,
+        Userpassword = password, // В реальном приложении пароль должен хешироваться!
+        Sname = sname,
+        Fname = fname,
+        Patronumic = patronumic,
+        Phonenumber = phonenumber
+    };
+
+    db.Users.Add(newUser);
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new
+    {
+        Message = "Регистрация успешна.",
+        UserId = newUser.Userid,
+        FullName = $"{newUser.Sname} {newUser.Fname} {newUser.Patronumic}",
+        PhoneNumber = newUser.Phonenumber
+    });
+});
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -247,7 +497,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// Включаем CORS перед UseAuthorization()
+app.UseCors("AllowAll");
+
+//app.UseHttpsRedirection();
 
 app.UseAuthorization();
 

@@ -17,7 +17,13 @@ public partial class GrillcitynnContext : DbContext
 
     public virtual DbSet<Discount> Discounts { get; set; }
 
+    public virtual DbSet<Myorder> Myorders { get; set; }
+
     public virtual DbSet<Order> Orders { get; set; }
+
+    public virtual DbSet<Orderproduct> Orderproducts { get; set; }
+
+    public virtual DbSet<Orderstatus> Orderstatuses { get; set; }
 
     public virtual DbSet<Product> Products { get; set; }
 
@@ -26,6 +32,8 @@ public partial class GrillcitynnContext : DbContext
     public virtual DbSet<ProductType> ProductTypes { get; set; }
 
     public virtual DbSet<Provider> Providers { get; set; }
+
+    public virtual DbSet<User> Users { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
@@ -41,6 +49,30 @@ public partial class GrillcitynnContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.DiscountPercent).HasColumnName("discount_percent");
+        });
+
+        modelBuilder.Entity<Myorder>(entity =>
+        {
+            entity.HasKey(e => e.Orderid).HasName("myorder_pkey");
+
+            entity.ToTable("myorder");
+
+            entity.Property(e => e.Orderid).HasColumnName("orderid");
+            entity.Property(e => e.Clientid).HasColumnName("clientid");
+            entity.Property(e => e.Codefortakeproduct).HasColumnName("codefortakeproduct");
+            entity.Property(e => e.Dateoforder)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("dateoforder");
+            entity.Property(e => e.Orderstatus).HasColumnName("orderstatus");
+
+            entity.HasOne(d => d.Client).WithMany(p => p.Myorders)
+                .HasForeignKey(d => d.Clientid)
+                .HasConstraintName("myorder_clientid_fkey");
+
+            entity.HasOne(d => d.OrderstatusNavigation).WithMany(p => p.Myorders)
+                .HasForeignKey(d => d.Orderstatus)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("myorder_orderstatus_fkey");
         });
 
         modelBuilder.Entity<Order>(entity =>
@@ -62,6 +94,37 @@ public partial class GrillcitynnContext : DbContext
             entity.HasOne(d => d.Product).WithMany(p => p.Orders)
                 .HasForeignKey(d => d.ProductId)
                 .HasConstraintName("orders_product_id_fkey");
+        });
+
+        modelBuilder.Entity<Orderproduct>(entity =>
+        {
+            entity.HasKey(e => new { e.Orderid, e.Productsid }).HasName("orderproduct_pkey");
+
+            entity.ToTable("orderproduct");
+
+            entity.Property(e => e.Orderid).HasColumnName("orderid");
+            entity.Property(e => e.Productsid).HasColumnName("productsid");
+            entity.Property(e => e.Countinorder).HasColumnName("countinorder");
+
+            entity.HasOne(d => d.Order).WithMany(p => p.Orderproducts)
+                .HasForeignKey(d => d.Orderid)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("orderproduct_orderid_fkey");
+
+            entity.HasOne(d => d.Products).WithMany(p => p.Orderproducts)
+                .HasForeignKey(d => d.Productsid)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("orderproduct_productsid_fkey");
+        });
+
+        modelBuilder.Entity<Orderstatus>(entity =>
+        {
+            entity.HasKey(e => e.Orderstatusid).HasName("orderstatus_pkey");
+
+            entity.ToTable("orderstatus");
+
+            entity.Property(e => e.Orderstatusid).HasColumnName("orderstatusid");
+            entity.Property(e => e.Statusname).HasColumnName("statusname");
         });
 
         modelBuilder.Entity<Product>(entity =>
@@ -131,6 +194,27 @@ public partial class GrillcitynnContext : DbContext
             entity.Property(e => e.ProviderName)
                 .HasMaxLength(50)
                 .HasColumnName("provider_name");
+        });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasKey(e => e.Userid).HasName("users_pkey");
+
+            entity.ToTable("users");
+
+            entity.Property(e => e.Userid).HasColumnName("userid");
+            entity.Property(e => e.Fname)
+                .HasMaxLength(100)
+                .HasColumnName("fname");
+            entity.Property(e => e.Patronumic)
+                .HasMaxLength(100)
+                .HasColumnName("patronumic");
+            entity.Property(e => e.Phonenumber).HasColumnName("phonenumber");
+            entity.Property(e => e.Sname)
+                .HasMaxLength(100)
+                .HasColumnName("sname");
+            entity.Property(e => e.Userlogin).HasColumnName("userlogin");
+            entity.Property(e => e.Userpassword).HasColumnName("userpassword");
         });
 
         OnModelCreatingPartial(modelBuilder);

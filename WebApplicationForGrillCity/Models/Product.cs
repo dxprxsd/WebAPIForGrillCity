@@ -19,6 +19,8 @@ public partial class Product
 
     public double Price { get; set; }
 
+    public virtual ICollection<Orderproduct> Orderproducts { get; set; } = new List<Orderproduct>();
+
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 
     public virtual ICollection<ProductMovement> ProductMovements { get; set; } = new List<ProductMovement>();

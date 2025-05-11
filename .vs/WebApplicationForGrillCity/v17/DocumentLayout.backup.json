@@ -5,6 +5,10 @@
     {
       "AbsoluteMoniker": "D:0:0:{835A735D-578A-4713-A21F-9F9BB8CCBD51}|WebApplicationForGrillCity\\WebApplicationForGrillCity.csproj|c:\\users\\admin\\source\\repos\\webapplicationforgrillcity\\webapplicationforgrillcity\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{835A735D-578A-4713-A21F-9F9BB8CCBD51}|WebApplicationForGrillCity\\WebApplicationForGrillCity.csproj|solutionrelative:webapplicationforgrillcity\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{835A735D-578A-4713-A21F-9F9BB8CCBD51}|WebApplicationForGrillCity\\WebApplicationForGrillCity.csproj|c:\\users\\admin\\source\\repos\\webapplicationforgrillcity\\webapplicationforgrillcity\\webapplicationforgrillcity.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{835A735D-578A-4713-A21F-9F9BB8CCBD51}|WebApplicationForGrillCity\\WebApplicationForGrillCity.csproj|solutionrelative:webapplicationforgrillcity\\webapplicationforgrillcity.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
     }
   ],
   "DocumentGroupContainers": [
@@ -14,7 +18,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -26,13 +30,25 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "WebApplicationForGrillCity.csproj",
+              "DocumentMoniker": "C:\\Users\\admin\\source\\repos\\WebApplicationForGrillCity\\WebApplicationForGrillCity\\WebApplicationForGrillCity.csproj",
+              "RelativeDocumentMoniker": "WebApplicationForGrillCity\\WebApplicationForGrillCity.csproj",
+              "ToolTip": "C:\\Users\\admin\\source\\repos\\WebApplicationForGrillCity\\WebApplicationForGrillCity\\WebApplicationForGrillCity.csproj",
+              "RelativeToolTip": "WebApplicationForGrillCity\\WebApplicationForGrillCity.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABoAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-05-10T11:23:11.954Z"
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 0,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\admin\\source\\repos\\WebApplicationForGrillCity\\WebApplicationForGrillCity\\Program.cs",
               "RelativeDocumentMoniker": "WebApplicationForGrillCity\\Program.cs",
               "ToolTip": "C:\\Users\\admin\\source\\repos\\WebApplicationForGrillCity\\WebApplicationForGrillCity\\Program.cs",
               "RelativeToolTip": "WebApplicationForGrillCity\\Program.cs",
-              "ViewState": "AgIAAJ0BAAAAAAAAAAAQwOoBAAADAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAHoBAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-04-10T13:21:13.696Z",
               "EditorCaption": ""

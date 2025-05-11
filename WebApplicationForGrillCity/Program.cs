@@ -1,9 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using WebApplicationForGrillCity.Models;
+using Microsoft.OpenApi.Models;
+using System.Reflection;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using Swashbuckle.AspNetCore.Annotations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,18 +27,48 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    c.IncludeXmlComments(xmlPath);
+
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "GrillCity API",
+        Version = "v1",
+        Description = "API для мобильного приложения GrillCity"
+    });
+
+    // Добавляем отображение HTTP-методов и описаний
+    c.DocInclusionPredicate((docName, apiDesc) =>
+    {
+        apiDesc.TryGetMethodInfo(out var methodInfo);
+        return true;
+    });
+
+    // Включаем аннотации (если нужно)
+    c.EnableAnnotations();
+});
 builder.Services.AddDbContext<GrillcitynnContext>();
 
 var app = builder.Build();
 
-app.MapGet("/productTypes", (GrillcitynnContext db) =>
+app.MapGet("/productTypes",
+    [SwaggerOperation(
+    Summary = "Типы товаров",
+    Description = "Получение типов товаров для фильтрации каталога")]
+(GrillcitynnContext db) =>
 {
     return Results.Json(db.ProductTypes.ToList());
 });
 
 
-app.MapGet("/products", (GrillcitynnContext db, int? typeId) =>
+app.MapGet("/products",
+    [SwaggerOperation(
+    Summary = "Список товаров",
+    Description = "Получение списка товаров для каталога")]
+(GrillcitynnContext db, int? typeId) =>
 {
     var query = db.Products.Include(p => p.ProductType).AsQueryable();
 
@@ -61,8 +96,11 @@ app.MapGet("/products", (GrillcitynnContext db, int? typeId) =>
     return Results.Json(products, new JsonSerializerOptions { ReferenceHandler = ReferenceHandler.IgnoreCycles });
 });
 
-// Получение заказов за период
-app.MapGet("/ordersByDate", async (GrillcitynnContext db, DateTime startDate, DateTime endDate) =>
+app.MapGet("/ordersByDate",
+    [SwaggerOperation(
+    Summary = "Продажи за период",
+    Description = "Получение заказов за период в декстоп приложении")]
+async (GrillcitynnContext db, DateTime startDate, DateTime endDate) =>
 {
     var start = DateOnly.FromDateTime(startDate);
     var end = DateOnly.FromDateTime(endDate.AddDays(1)); // Включительно
@@ -81,8 +119,11 @@ app.MapGet("/ordersByDate", async (GrillcitynnContext db, DateTime startDate, Da
     });
 });
 
-// Статистика выручки по поставщикам
-app.MapGet("/orderStatsByProvider", async (GrillcitynnContext db, DateTime startDate, DateTime endDate) =>
+app.MapGet("/orderStatsByProvider",
+    [SwaggerOperation(
+    Summary = "Статистика выручки по поставщикам",
+    Description = "Статистика выручки по поставщикам в декстоп приложении")]
+async (GrillcitynnContext db, DateTime startDate, DateTime endDate) =>
 {
     var start = DateOnly.FromDateTime(startDate);
     var end = DateOnly.FromDateTime(endDate.AddDays(1));
@@ -106,7 +147,11 @@ app.MapGet("/orderStatsByProvider", async (GrillcitynnContext db, DateTime start
     return Results.Json(stats);
 });
 
-app.MapGet("/orders", async (GrillcitynnContext db) =>
+app.MapGet("/orders",
+    [SwaggerOperation(
+    Summary = "Список покупок",
+    Description = "Выведение покупок в декстоп приложении")]
+async (GrillcitynnContext db) =>
 {
     var orders = await db.Orders
         .Include(o => o.Product)
@@ -122,7 +167,11 @@ app.MapGet("/orders", async (GrillcitynnContext db) =>
 });
 
 
-app.MapPost("/CreateOrder", (
+app.MapPost("/CreateOrder",
+    [SwaggerOperation(
+    Summary = "Создание продажи",
+    Description = "Создание продажи в декстоп приложении")]
+(
     GrillcitynnContext db,
     int productId,
     int? discountId,
@@ -191,19 +240,31 @@ app.MapPost("/CreateOrder", (
 
 // Add these endpoints to your Program.cs or wherever you configure your API
 
-app.MapGet("/productss", (GrillcitynnContext db) =>
+app.MapGet("/productss",
+    [SwaggerOperation(
+    Summary = "Товары",
+    Description = "Выведение товаров для выпадающего списка")]
+(GrillcitynnContext db) =>
 {
     return Results.Json(db.Products.ToList());
 });
 
-app.MapGet("/discounts", (GrillcitynnContext db) =>
+app.MapGet("/discounts",
+    [SwaggerOperation(
+    Summary = "Скидка",
+    Description = "Выведение скидки для выпадающего списка")] 
+(GrillcitynnContext db) =>
 {
     return Results.Json(db.Discounts.ToList());
 });
 
 
 
-app.MapPost("/updateProductStock", async (GrillcitynnContext db, int productId, int quantity) =>
+app.MapPost("/updateProductStock",
+    [SwaggerOperation(
+    Summary = "Обновление количества товаров",
+    Description = "Обновление количества товаров на складе магазина после их прихода")]
+async (GrillcitynnContext db, int productId, int quantity) =>
 {
     // Проверка, существует ли товар
     var product = await db.Products.FirstOrDefaultAsync(p => p.Id == productId);
@@ -232,7 +293,11 @@ app.MapPost("/updateProductStock", async (GrillcitynnContext db, int productId, 
 });
 
 
-app.MapGet("/getProductMovements", async (GrillcitynnContext db) =>
+app.MapGet("/getProductMovements",
+    [SwaggerOperation(
+    Summary = "Движение товаров",
+    Description = "Получение данных о движении товаров для создания отчетов")]
+async (GrillcitynnContext db) =>
 {
     var movements = await db.ProductMovements
         .Include(m => m.Product)
@@ -249,12 +314,20 @@ app.MapGet("/getProductMovements", async (GrillcitynnContext db) =>
     return Results.Json(movements);
 });
 
-app.MapGet("/providers", (GrillcitynnContext db) =>
+app.MapGet("/providers",
+    [SwaggerOperation(
+    Summary = "Список поставщиков",
+    Description = "Список поставщиков в декстоп приложении")]
+(GrillcitynnContext db) =>
 {
     return Results.Json(db.Providers.ToList());
 });
 
-app.MapPost("/login", async (GrillcitynnContext db, string login, string password) =>
+app.MapPost("/login",
+    [SwaggerOperation(
+    Summary = "Авторизация клиента",
+    Description = "Авторизация клиента в мобильном приложении")]
+async (GrillcitynnContext db, string login, string password) =>
 {
     // Поиск пользователя по логину и паролю
     var user = await db.Users.FirstOrDefaultAsync(u =>
@@ -274,7 +347,11 @@ app.MapPost("/login", async (GrillcitynnContext db, string login, string passwor
     });
 });
 
-app.MapPost("/CreateMobileOrder", (
+app.MapPost("/CreateMobileOrder",
+    [SwaggerOperation(
+    Summary = "Создание заказа клиентом",
+    Description = "Создание заказа клиентом в мобильном приложении")] 
+(
     GrillcitynnContext db,
     [FromBody] CreateOrderDto dto
 ) =>
@@ -377,8 +454,12 @@ app.MapPost("/CreateMobileOrder", (
 });
 
 
-app.MapGet("/ordersByUser", async (GrillcitynnContext db, int userId) =>
-{
+app.MapGet("/ordersByUser",
+    [SwaggerOperation(
+    Summary = "Заказы клиента",
+    Description = "Выведение заказов конкретного клиента в мобильном приложении")]
+    async (GrillcitynnContext db, int userId) =>
+    {
     var orders = await db.Myorders
         .Where(o => o.Clientid == userId)
         .Include(o => o.OrderstatusNavigation)
@@ -400,9 +481,14 @@ app.MapGet("/ordersByUser", async (GrillcitynnContext db, int userId) =>
         .ToListAsync();
 
     return Results.Ok(orders);
-});
+    }
+);
 
-app.MapGet("/statistics", (GrillcitynnContext db) =>
+app.MapGet("/statistics",
+    [SwaggerOperation(
+    Summary = "Статистика по продажам",
+    Description = "Выведение статистики по продажам товаров в магазине")]
+(GrillcitynnContext db) =>
 {
     var orders = db.Orders
         .Include(o => o.Product)
@@ -429,7 +515,11 @@ app.MapGet("/statistics", (GrillcitynnContext db) =>
     return Results.Json(result);
 });
 
-app.MapPost("/register", async (GrillcitynnContext db,
+app.MapPost("/register", [SwaggerOperation(
+    Summary = "Регистрация клиента",
+    Description = "Регистрация нового клиента в мобильном приложении")]
+
+    async (GrillcitynnContext db,
     string login,
     string password,
     string sname,

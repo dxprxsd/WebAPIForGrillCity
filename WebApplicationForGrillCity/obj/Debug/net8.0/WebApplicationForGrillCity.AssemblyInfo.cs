@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("WebApplicationForGrillCity")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0ba26d35ea55899a3b0e42b18bddeb009810e474")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+888aef26bff7ebc18ff432905b7a4b2f292466ce")]
 [assembly: System.Reflection.AssemblyProductAttribute("WebApplicationForGrillCity")]
 [assembly: System.Reflection.AssemblyTitleAttribute("WebApplicationForGrillCity")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
